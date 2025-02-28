@@ -1,35 +1,103 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>CesiumJS Example</title>
-  <script src="https://cesiumjs.org/releases/1.78/Build/Cesium/Cesium.js"></script>
-  <link rel="stylesheet" href="https://cesiumjs.org/releases/1.78/Build/Cesium/Widgets/widgets.css">
-  <style>
-    #cesiumContainer {
-      width: 100%;
-      height: 500px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live GPS Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            width: 90%;
+            max-width: 400px;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 15px;
+            border: none;
+            background: #007bff;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #map-link {
+            display: block;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #007bff;
+        }
+    </style>
 </head>
 <body>
-  <div id="cesiumContainer"></div>
-  <script>
-    // Create a Cesium viewer
-    var viewer = new Cesium.Viewer('cesiumContainer');
 
-    // Set the camera position and orientation
-    viewer.camera.flyTo({
-      destination : Cesium.Cartesian3.fromDegrees(-74.0, 40.0, 10000000.0)
-    });
+    <div class="container">
+        <h2>Live GPS Tracker</h2>
+        <p><strong>Latitude:</strong> <span id="latitude">Waiting...</span></p>
+        <p><strong>Longitude:</strong> <span id="longitude">Waiting...</span></p>
+        <p><strong>Accuracy:</strong> <span id="accuracy">Waiting...</span> meters</p>
+        <p><strong>Speed:</strong> <span id="speed">Waiting...</span> m/s</p>
+        <p><strong>Timestamp:</strong> <span id="timestamp">Waiting...</span></p>
+        <a id="map-link" href="#" target="_blank">View on Google Maps</a>
+        <button onclick="startTracking()">Start Tracking</button>
+        <button onclick="stopTracking()">Stop Tracking</button>
+    </div>
 
-    // Add a marker at a specific location
-    var marker = viewer.entities.add({
-      position : Cesium.Cartesian3.fromDegrees(-74.0, 40.0),
-      point : {
-        pixelSize : 10,
-        color : Cesium.Color.RED
-      }
-    });
-  </script>
+    <script>
+        let watchID;
+
+        function startTracking() {
+            if ("geolocation" in navigator) {
+                watchID = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const lat = position.coords.latitude.toFixed(6);
+                        const lon = position.coords.longitude.toFixed(6);
+                        const acc = position.coords.accuracy.toFixed(2);
+                        const spd = position.coords.speed ? position.coords.speed.toFixed(2) : "N/A";
+                        const time = new Date(position.timestamp).toLocaleString();
+
+                        document.getElementById("latitude").textContent = lat;
+                        document.getElementById("longitude").textContent = lon;
+                        document.getElementById("accuracy").textContent = acc;
+                        document.getElementById("speed").textContent = spd;
+                        document.getElementById("timestamp").textContent = time;
+
+                        // Update Google Maps link
+                        document.getElementById("map-link").href = `https://www.google.com/maps?q=${lat},${lon}`;
+                    },
+                    (error) => {
+                        alert("Error getting location: " + error.message);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 0,
+                        timeout: 5000
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by your browser.");
+            }
+        }
+
+        function stopTracking() {
+            if (watchID) {
+                navigator.geolocation.clearWatch(watchID);
+                alert("Tracking Stopped");
+            }
+        }
+    </script>
+
 </body>
 </html>
